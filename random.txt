@@ -1,0 +1,118 @@
+    @Override
+    public StatusReport NewCommand(int command) throws RemoteObjectException {
+        re.lock();
+        RaftLog newEntry = new RaftLog(command, currentTerm);
+        logs.add(newEntry);
+        boolean isCommitted = false;
+        Set<Integer> successFollowers = new HashSet<>();
+        while (!isCommitted) {
+            for (int peerId=0; peerId<numOfPeers; peerId++) {
+                if (peerId == nodeId || successFollowers.contains(peerId)) continue;
+                int prevLogIndex = nextIndex[peerId] - 1;
+                int prevLogTerm = prevLogIndex >= 0 ? logs.get(prevLogIndex).term : 0;
+                String peerAddr = getPeerPort(peerId);
+                RaftInterface peer = StubFactory.create(RaftInterface.class, peerAddr);
+                AppendEntriesResp resp = peer.AppendEntries(
+                        currentTerm,
+                        nodeId,
+                        prevLogIndex,
+                        prevLogTerm,
+                        getSuffixEntries(nextIndex[peerId], false),
+                        commitIndex
+                );
+                callCount++;
+                if (resp != null) {
+                    if (resp.getTerm() > currentTerm) {
+                        if (debug) {
+                            System.out.println(getPersistentState() + " -----> FOLLOWER");
+                        }
+                        currentTerm = resp.getTerm();
+                        currentRole = RaftRole.FOLLOWER;
+                        votedFor = null;
+                        if (heartbeatTimer != null) heartbeatTimer.cancel(true);
+                    } else {
+                        if (resp.isSuccess()) {
+                            successFollowers.add(peerId);
+                            nextIndex[peerId]++;
+                            matchIndex[peerId] = nextIndex[peerId] - 1;
+                            if (successFollowers.size() >= (numOfPeers + 1) / 2) {
+                                commitIndex = logs.size() - 1;
+                                if (commitIndex > lastApplied) {
+                                    lastApplied++;
+                                }
+                                isCommitted = true;
+                            }
+                        } else {
+                            if (nextIndex[peerId] > 0) nextIndex[peerId]--;
+                        }
+                    }
+                }
+            }
+        }
+        re.unlock();
+        return new StatusReport(logs.size()-1, currentTerm, currentRole == RaftRole.LEADER, callCount);
+    }
+
+        List<RaftLog> getSuffixEntries(int nextIndex, boolean asHeartbeat) {
+            List<RaftLog> suffix = new ArrayList<>();
+            if (nextIndex >= 0 && !asHeartbeat) {
+                for (int i=nextIndex; i<this.logs.size(); i++) {
+                    suffix.add(this.logs.get(i));
+                }
+            }
+            return suffix;
+        }
+
+
+    String getPersistentState() {
+        return String.format("\nNode id: %d\n" +
+                        "\t currentTerm: %d\n" +
+                        "\t currentRole: %s\n" +
+                        "\t votedFor: %d\n" +
+                        "\t logs: %s\n",
+                nodeId, currentTerm, currentRole, votedFor, getListContent(logs));
+    }
+
+    private String getListContent(List<RaftLog> entries) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < logs.size(); i++) {
+            RaftLog log = logs.get(i);
+            sb.append("{msg: ").append(log.msg).append(", term: ").append(log.term).append("}");
+            if (i < logs.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+        /**
+         * GetCommittedCmd -- called (only) by the Controller.  this method provides an input argument
+         * `index`.  if the Raft peer has a log entry at the given `index`, and that log entry has been
+         * committed (per the Raft algorithm), then the command stored in the log entry should be returned
+         * to the Controller.  otherwise, the Raft peer should return the value 0, which is not a valid
+         * command number and indicates that no committed log entry exists at that index
+         * */
+        @Override
+        public int GetCommittedCmd(int index) throws RemoteObjectException {
+            if (!isNodeActivated) {
+                throw new RemoteObjectException("node deactivated");
+            }
+            if (index <= commitIndex && index < logs.size()) {
+                return logs.get(index).msg;
+            }
+            return 0;
+        }
+
+                if (entries.size() > 0) {
+                    System.out.println(getPersistentState());
+                    System.out.printf("\nLog not match -> Parameter received:\n" +
+                                    "\tleaderTerm: %d\n" +
+                                    "\tleaderId: %d\n" +
+                                    "\tprevLogIndex: %d\n" +
+                                    "\tprevLogTerm: %d\n" +
+                                    "\tsuffix: %s\n" +
+                                    "\tleaderCommit: %d\n",
+                            leaderTerm, leaderId, prevLogIndex, prevLogTerm, getListContent(entries), leaderCommit);
+                }

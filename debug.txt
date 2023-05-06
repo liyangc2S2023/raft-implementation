@@ -1,0 +1,152 @@
+
+TestCheckpoint_Setup: testing initial setup of Raft remote interfaces
+	checking controller creation ... ok
+	checking controller can get peer status ... ok
+PASS
+
+TestCheckpoint_InitialElection: testing behavior of initial election
+	checking for leader ... ok
+	checking for term agreement ... ok
+	checking there's still a leader ... ok
+PASS
+
+TestCheckpoint_ReElection: testing behavior of election after network failure
+	checking for leader ... ok
+	checking for new leader after disconnecting previous leader ... ok
+	checking for leader after previous leader reconnects ... ok
+	checking for no leader after majority disconnects ... ok
+	checking for leader after follower reconnection ... ok
+	checking for leader after previous leader reconnection ... ok
+PASS
+
+TestFinal_BasicAgree: testing agreement and commitment with no failure
+	checking for no early commit ... ok
+	checking for correct commit and agreement ... 
+Node id: 1
+	 currentTerm: 27
+	 currentRole: LEADER
+	 votedFor: 1
+	 logs: []
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 0
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 2
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: 1
+	 logs: []
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 0
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 3
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: null
+	 logs: []
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 0
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 4
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: null
+	 logs: []
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 0
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 0
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: 1
+	 logs: [{msg: 100, term: 27}]
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 1
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}, {msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 2
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: 1
+	 logs: [{msg: 100, term: 27}]
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 1
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}, {msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 3
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: null
+	 logs: [{msg: 100, term: 27}]
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 1
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}, {msg: 100, term: 27}]
+	leaderCommit: 0
+IS LOG OK true
+Node id: 4
+	 currentTerm: 27
+	 currentRole: FOLLOWER
+	 votedFor: null
+	 logs: [{msg: 100, term: 27}]
+
+
+Log not match -> Parameter received:
+	leaderTerm: 27
+	leaderId: 1
+	prevLogIndex: -1
+	prevLogTerm: 0
+	suffix: [{msg: 100, term: 27}, {msg: 100, term: 27}]
+	leaderCommit: 1
+IS LOG OK trueFAIL
+
+failed test:    TestFinal_BasicAgree
+reason:         test timed out
+
+tests not run (up to 1x each) because of missing prerequisites: test.raft.TestFinal_FailAgree, test.raft.TestFinal_FailNoAgree, test.raft.TestFinal_Rejoin, test.raft.TestFinal_Backup, test.raft.TestFinal_Count
+
+passed: 3 ---- failed: 1 ---- not run: 5
+score: 65.00 / 320.0
